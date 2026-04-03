@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panama & Costa Rica — Travel Intelligence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --jungle: #1a3a2a;
+    --palm: #2d6a4f;
+    --leaf: #52b788;
+    --mist: #b7e4c7;
+    --sand: #f4e9d0;
+    --amber: #e9a820;
+    --red: #c0392b;
+    --ink: #0d1f17;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--sand);
+    min-height: 100vh;
+  }
+
+  .bg-texture {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(45,106,79,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(82,183,136,0.12) 0%, transparent 50%);
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    border-bottom: 1px solid rgba(82,183,136,0.3);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--leaf);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--sand);
+    margin-bottom: 0.4rem;
+  }
+
+  h1 span { color: var(--leaf); }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: rgba(183,228,199,0.6);
+    font-weight: 300;
+  }
+
+  .scan-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.4rem;
+    background: var(--palm);
+    border: 1px solid var(--leaf);
+    color: var(--sand);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    padding: 0.7rem 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+  .scan-btn:hover { background: var(--leaf); color: var(--ink); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .timestamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(183,228,199,0.4);
+    margin-top: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  .alert-banner {
+    display: none;
+    background: rgba(192,57,43,0.15);
+    border: 1px solid var(--red);
+    border-left: 4px solid var(--red);
+    padding: 0.8rem 1rem;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: #e88;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .alert-banner.visible { display: flex; }
+
+  .sections { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .section {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(82,183,136,0.15);
+    border-radius: 3px;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .section.visible { opacity: 1; transform: translateY(0); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.9rem 1.2rem;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(82,183,136,0.12);
+  }
+
+  .section-icon { font-size: 1.1rem; }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--leaf);
+  }
+
+  .priority-tag {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .priority-tag.high { background: rgba(192,57,43,0.25); color: #e88; border: 1px solid rgba(192,57,43,0.5); }
+  .priority-tag.medium { background: rgba(233,168,32,0.2); color: var(--amber); border: 1px solid rgba(233,168,32,0.4); }
+  .priority-tag.low { background: rgba(82,183,136,0.15); color: var(--leaf); border: 1px solid rgba(82,183,136,0.3); }
+
+  .section-body {
+    padding: 1.2rem;
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: rgba(244,233,208,0.85);
+  }
+
+  .section-body ul { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+  .section-body li { padding-left: 1.2rem; position: relative; }
+  .section-body li::before {
+    content: '→';
+    position: absolute; left: 0;
+    color: var(--leaf); font-size: 0.75rem; top: 0.1em;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0.04) 25%,
+      rgba(255,255,255,0.09) 50%,
+      rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 3px;
+    height: 0.85rem;
+    margin-bottom: 0.65rem;
+  }
+  .skeleton.w90 { width: 90%; }
+  .skeleton.w80 { width: 80%; }
+  .skeleton.w70 { width: 70%; }
+  .skeleton.w60 { width: 60%; }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .error-msg {
+    background: rgba(192,57,43,0.1);
+    border: 1px solid rgba(192,57,43,0.3);
+    padding: 0.9rem;
+    border-radius: 2px;
+    font-size: 0.85rem;
+    color: #e88;
+    text-align: center;
+  }
+
+  .idle-state {
+    text-align: center;
+    padding: 3.5rem 1rem;
+    color: rgba(183,228,199,0.3);
+  }
+  .idle-state .idle-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+  .idle-state p { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; }
+
+  .spinner {
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid rgba(82,183,136,0.3);
+    border-top-color: var(--leaf);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(82,183,136,0.12);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    color: rgba(183,228,199,0.2);
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="bg-texture"></div>
+<div class="container">
+  <header>
+    <div class="eyebrow">Travel Intelligence Dashboard</div>
+    <h1>Panama <span>&amp;</span> Costa Rica</h1>
+    <div class="subtitle">Live news scan · Fuel alerts · Tourist &amp; expat intelligence</div>
+    <button class="scan-btn" id="scanBtn" onclick="runScan()">
+      ⟳&nbsp; RUN NEWS SCAN
+    </button>
+    <div class="timestamp" id="timestamp"></div>
+  </header>
+
+  <div class="alert-banner" id="fuelAlert">
+    <span>⚠️</span>
+    <span id="fuelAlertText"></span>
+  </div>
+
+  <div id="content">
+    <div class="idle-state">
+      <span class="idle-icon">🌿</span>
+      <p>Press "RUN NEWS SCAN" to fetch the latest news</p>
+    </div>
+  </div>
+
+  <footer>Powered by Claude · Live web search · Refresh anytime for current intelligence</footer>
+</div>
+
+<script>
+const today = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+
+const SECTIONS = [
+  {
+    id: 'fuel',
+    icon: '⛽',
+    title: 'Jet Fuel & Flight Disruptions — Panama',
+    priority: 'high',
+    tag: 'PRIORITY',
+    prompt: `Search for very recent news (last 2 weeks) about jet fuel shortages, aviation fuel supply issues, or flight cancellations/disruptions at Panama's Tocumen International Airport (PTY) or in Panama generally. Also check for any airline operational issues, airport strikes, or air travel disruptions in Panama. Summarize in 4-5 concise bullet points. If there are no current issues, state that clearly. Today is ${today}.`
+  },
+  {
+    id: 'panama',
+    icon: '🇵🇦',
+    title: 'Panama — Travel Advisories & Local News',
+    priority: 'medium',
+    tag: 'WATCH',
+    prompt: `Search for recent news (last 2 weeks) relevant to tourists visiting Panama. Cover: travel advisories or safety updates, protests or road blockades, notable weather events or flooding, border or entry requirement changes, crime trends in tourist areas (Casco Viejo, Panama City, Bocas del Toro, Boquete), and significant local events affecting visitors. Summarize in 4-6 concise bullet points. Today is ${today}.`
+  },
+  {
+    id: 'costarica',
+    icon: '🇨🇷',
+    title: 'Costa Rica — Travel Advisories & Local News',
+    priority: 'medium',
+    tag: 'WATCH',
+    prompt: `Search for recent news (last 2 weeks) relevant to tourists in Costa Rica. Cover: travel advisories or safety updates, volcanic activity (Arenal, Poás, Turrialba, Rincón de la Vieja), road closures or landslides, weather events, entry or visa changes, crime alerts in tourist zones (Manuel Antonio, La Fortuna, Tamarindo, San José), and anything affecting travel within the country. Summarize in 4-6 concise bullet points. Today is ${today}.`
+  },
+  {
+    id: 'expat',
+    icon: '🌎',
+    title: 'Expat & Long-Stay News — Both Countries',
+    priority: 'low',
+    tag: 'INFO',
+    prompt: `Search for recent news (last month) relevant to expats and long-stay visitors in Panama and Costa Rica. Cover: changes to residency or visa rules, pensionado program updates, healthcare access for foreigners, cost of living changes, banking or currency issues for foreigners, notable expat community developments, and new laws affecting foreign residents. Summarize in 4-6 concise bullet points. Today is ${today}.`
+  }
+];
+
+async function fetchSection(section) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+      messages: [{ role: "user", content: section.prompt }]
+    })
+  });
+  const data = await res.json();
+  return data.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+
+function parseBullets(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const bullets = lines
+    .filter(l => /^[-•*✓→✗\d+\.]/.test(l) || (l.length > 25 && !l.endsWith(':')))
+    .map(l => l.replace(/^[-•*✓→✗\d+\.]\s*\*?\*?/, '').replace(/\*\*$/, '').trim())
+    .filter(l => l.length > 15)
+    .slice(0, 7);
+  return bullets.length > 0 ? bullets : lines.filter(l => l.length > 20).slice(0, 5);
+}
+
+function skeletonHTML(section) {
+  return `
+    <div class="section visible" id="sec-${section.id}">
+      <div class="section-header">
+        <span class="section-icon">${section.icon}</span>
+        <span class="section-title">${section.title}</span>
+        <span class="priority-tag ${section.priority}">${section.tag}</span>
+      </div>
+      <div class="section-body">
+        <div class="skeleton w90"></div>
+        <div class="skeleton w75"></div>
+        <div class="skeleton w85"></div>
+        <div class="skeleton w60"></div>
+      </div>
+    </div>`;
+}
+
+async function runScan() {
+  const btn = document.getElementById('scanBtn');
+  const content = document.getElementById('content');
+  const timestamp = document.getElementById('timestamp');
+  const fuelAlert = document.getElementById('fuelAlert');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>&nbsp; SCANNING...';
+  fuelAlert.classList.remove('visible');
+
+  content.innerHTML = `<div class="sections">${SECTIONS.map(skeletonHTML).join('')}</div>`;
+
+  await Promise.all(SECTIONS.map(async (section) => {
+    const el = document.getElementById(`sec-${section.id}`);
+    try {
+      const text = await fetchSection(section);
+      const bullets = parseBullets(text);
+      el.querySelector('.section-body').innerHTML =
+        `<ul>${bullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+
+      if (section.id === 'fuel') {
+        const lower = text.toLowerCase();
+        if (['shortage','disruption','cancell','strike','closure','suspend'].some(w => lower.includes(w))) {
+          document.getElementById('fuelAlertText').textContent =
+            'Potential flight disruption indicators detected for Panama — see Fuel & Flight section below.';
+          fuelAlert.classList.add('visible');
+        }
+      }
+    } catch(e) {
+      el.querySelector('.section-body').innerHTML =
+        `<div class="error-msg">Fetch failed — check your connection and try again.</div>`;
+    }
+    el.classList.add('visible');
+  }));
+
+  timestamp.textContent = `Last scanned: ${new Date().toLocaleString('en-US', {
+    weekday:'short', month:'short', day:'numeric', year:'numeric',
+    hour:'2-digit', minute:'2-digit', timeZoneName:'short'
+  })}`;
+
+  btn.disabled = false;
+  btn.innerHTML = '⟳&nbsp; REFRESH SCAN';
+}
+</script>
+</body>
+</html>
