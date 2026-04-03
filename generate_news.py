@@ -72,36 +72,45 @@ def main():
     results = {}
     fuel_alert = None
 
-    for section in sections:
+    for i, section in enumerate(sections):
         print(f"Fetching: {section['title']}...")
-        try:
-            response = client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1500,
-                tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 1}],
-                messages=[{"role": "user", "content": section["prompt"]}],
-            )
-            text = "\n".join(
-                block.text
-                for block in response.content
-                if hasattr(block, "text")
-            ).strip()
-            bullets = parse_bullets(text)
-            results[section["id"]] = bullets
-            if section["id"] == "fuel":
-                lower = text.lower()
-                if any(
-                    w in lower
-                    for w in ["shortage", "disruption", "cancell", "strike", "closure", "suspend"]
-                ):
-                    fuel_alert = (
-                        "Potential flight disruption indicators detected for Panama "
-                        "&mdash; see Fuel &amp; Flight section below."
-                    )
-        except Exception as e:
-            print(f"Error fetching {section['title']}: {e}")
-            results[section["id"]] = [f"Error fetching data: {e}"]
-        time.sleep(120)  # avoid token/min rate limit â 2 full minutes ensures clean window
+        max_retries = 4
+        for attempt in range(max_retries):
+            try:
+                response = client.messages.create(
+                    model="claude-sonnet-4-6",
+                    max_tokens=1500,
+                    tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 1}],
+                    messages=[{"role": "user", "content": section["prompt"]}],
+                )
+                text = "\n".join(
+                    block.text
+                    for block in response.content
+                    if hasattr(block, "text")
+                ).strip()
+                bullets = parse_bullets(text)
+                results[section["id"]] = bullets
+                if section["id"] == "fuel":
+                    lower = text.lower()
+                    if any(
+                        w in lower
+                        for w in ["shortage", "disruption", "cancell", "strike", "closure", "suspend"]
+                    ):
+                        fuel_alert = (
+                            "Potential flight disruption indicators detected for Panama "
+                            "&mdash; see Fuel &amp; Flight section below."
+                        )
+                break  # success
+            except Exception as e:
+                print(f"Attempt {attempt + 1}/{max_retries} failed for {section['title']}: {e}")
+                if attempt < max_retries - 1:
+                    wait = 90 * (attempt + 1)
+                    print(f"Rate limited â waiting {wait}s before retry...")
+                    time.sleep(wait)
+                else:
+                    results[section["id"]] = [f"Error fetching data: {e}"]
+        if i < len(sections) - 1:
+            time.sleep(120)  # gap between sections to stay within rate limits
 
     html = generate_html(sections, results, fuel_alert, today)
     with open("pa_cr.html", "w", encoding="utf-8") as f:
