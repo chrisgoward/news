@@ -78,7 +78,7 @@ def main():
             response = client.messages.create(
                 model="claude-sonnet-4-6",
                 max_tokens=1500,
-                tools=[{"type": "web_search_20250305", "name": "web_search"}],
+                tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 1}],
                 messages=[{"role": "user", "content": section["prompt"]}],
             )
             text = "\n".join(
@@ -101,7 +101,7 @@ def main():
         except Exception as e:
             print(f"Error fetching {section['title']}: {e}")
             results[section["id"]] = [f"Error fetching data: {e}"]
-        time.sleep(65)  # avoid 30k token/min rate limit â >60s ensures fresh window
+        time.sleep(120)  # avoid token/min rate limit â 2 full minutes ensures clean window
 
     html = generate_html(sections, results, fuel_alert, today)
     with open("pa_cr.html", "w", encoding="utf-8") as f:
