@@ -101,7 +101,7 @@ def main():
         except Exception as e:
             print(f"Error fetching {section['title']}: {e}")
             results[section["id"]] = [f"Error fetching data: {e}"]
-        time.sleep(35)  # avoid 30k token/min rate limit
+        time.sleep(65)  # avoid 30k token/min rate limit â >60s ensures fresh window
 
     html = generate_html(sections, results, fuel_alert, today)
     with open("pa_cr.html", "w", encoding="utf-8") as f:
@@ -113,8 +113,13 @@ def parse_bullets(text):
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     bullets = []
     for line in lines:
+        # Skip markdown headers (###, ##, #)
+        if re.match(r'^#{1,6}\s', line):
+            continue
         clean = re.sub(r"^[-\u2022*\u2713\u2192\u2717\d+\.]+\s*\*?\*?", "", line).strip()
-        clean = re.sub(r"\*\*$", "", clean).strip()
+        clean = re.sub(r"\*\*", "", clean).strip()
+        clean = re.sub(r"^\*+\s*", "", clean).strip()
+        clean = re.sub(r"^#+\s*", "", clean).strip()
         if len(clean) > 15:
             bullets.append(clean)
     if bullets:
